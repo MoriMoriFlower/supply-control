@@ -1,0 +1,16 @@
+{
+ "asOf": "2026-08-14",
+ "prevAsOf": null,
+ "first": true,
+ "collectedAt": "2026-08-16T11:52:28.961Z",
+ "summary": {
+  "total": 0,
+  "notify": 0,
+  "added": 0,
+  "removed": 0,
+  "shukka": 0,
+  "ryo": 0,
+  "detail": 0
+ },
+ "changes": []
+}

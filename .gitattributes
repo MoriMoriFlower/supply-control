@@ -1,0 +1,4 @@
+# 改行コードは常にLFで固定する。
+# WindowsのローカルとGitHub Actions(Linux)を行き来するため、ここを固定しないと
+# 中身が同じでも「全行が変わった」と判定され、毎日無意味なコミットとPagesビルドが走る。
+* text=auto eol=lf

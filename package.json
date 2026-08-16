@@ -1,0 +1,14 @@
+{
+  "name": "supply-control",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "医薬品の供給不安を通知で受け取るPWA",
+  "scripts": {
+    "collect": "node scripts/collect.mjs",
+    "selftest": "node scripts/selftest.mjs"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0"
+  }
+}

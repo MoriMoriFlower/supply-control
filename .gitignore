@@ -1,0 +1,17 @@
+# 依存
+node_modules/
+
+# 秘密（★絶対にコミットしない。VAPID秘密鍵・CloudflareAPIトークンはGitHub Secretsへ）
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.json
+
+# 作業用
+tmp/
+*.log
+
+# 元xlsx（サイズが大きく、正規化JSONから復元する必要もないため保持しない）
+tmp/*.xlsx
