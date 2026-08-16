@@ -50,13 +50,16 @@
           />
         </div>
 
-        <!-- 出荷対応でしぼる。語を入れずにここだけ押せば、いま調整中のものを一覧できる。
-             区分の名前と件数は厚労省の原本のまま（こちらで「調整中」を定義し直さない） -->
-        <div class="chips" id="filters" role="group" aria-label="出荷対応でしぼる">
+        <!-- しぼり込み。語を入れずにここだけ押せば、いま調整中のものを一覧できる。
+             区分の名前と件数は厚労省の原本のまま（こちらで「調整中」を定義し直さない）。
+             仕切りの右は⑰出荷量＝別の列。⑫が①通常出荷でも出荷量が減っているものが827件ある -->
+        <div class="chips" id="filters" role="group" aria-label="供給状況でしぼる">
           <button type="button" data-filter="all" class="on">すべて<span class="n"></span></button>
           <button type="button" data-filter="adjust">調整中<span class="n"></span></button>
           <button type="button" data-filter="limited">限定出荷<span class="n"></span></button>
           <button type="button" data-filter="stop">供給停止<span class="n"></span></button>
+          <span class="chip-sep" aria-hidden="true"></span>
+          <button type="button" data-filter="less">出荷量減少<span class="n"></span></button>
         </div>
 
         <p class="note" id="search-note">品名でも成分名でも引けます。ひらがな・半角でも当たります。</p>

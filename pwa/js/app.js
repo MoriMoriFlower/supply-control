@@ -37,18 +37,29 @@ function severity(shukka) {
 }
 
 /**
- * 「調整中」は厚労省の②③④⑤（限定出荷3種＋供給停止）をまとめただけ。
- * こちらで独自の基準を作らない。①通常出荷を調整中に含めることは絶対にしない。
+ * しぼり込み。原本の2つの列をそれぞれ見るだけで、独自の基準は作らない。
+ *
+ *  ★「調整中」＝⑫出荷対応の ②③④⑤（限定出荷3種＋供給停止）。①通常出荷を含めることは絶対にしない。
+ *  ★「出荷量減少」＝⑰出荷量の B。これは別の列。
+ *    実測1,044件のうち827件は⑫が①通常出荷＝調整中には出てこない。だから別のボタンにしてある。
  */
 const FILTERS = {
   all: () => true,
-  adjust: (s) => s === 'limited' || s === 'stop',
-  limited: (s) => s === 'limited',
-  stop: (s) => s === 'stop',
+  adjust: (st) => ['limited', 'stop'].includes(severity(st?.shukka)),
+  limited: (st) => severity(st?.shukka) === 'limited',
+  stop: (st) => severity(st?.shukka) === 'stop',
+  less: (st) => (st?.ryo ?? '').startsWith('B'),
 };
-const FILTER_LABEL = { all: 'すべて', adjust: '調整中', limited: '限定出荷', stop: '供給停止' };
+const FILTER_LABEL = {
+  all: 'すべて',
+  adjust: '調整中',
+  limited: '限定出荷',
+  stop: '供給停止',
+  less: '出荷量減少',
+};
 
-const sevOf = (yj) => severity(state.status.get(yj)?.shukka);
+const stOf = (yj) => state.status.get(yj);
+const sevOf = (yj) => severity(stOf(yj)?.shukka);
 
 function el(tag, cls, text) {
   const n = document.createElement(tag);
@@ -143,7 +154,7 @@ async function renderWatch() {
   if (!state.watch.length || !state.status.size) {
     note.textContent = '';
   } else {
-    const n = state.watch.filter((w) => FILTERS.adjust(sevOf(w.yj))).length;
+    const n = state.watch.filter((w) => FILTERS.adjust(stOf(w.yj))).length;
     note.textContent = n
       ? `登録 ${state.watch.length} 件のうち、${n} 件がいま調整中です。`
       : `登録 ${state.watch.length} 件。いま調整中のものはありません。`;
@@ -174,7 +185,7 @@ function browseList(filter) {
   const pass = FILTERS[filter];
   list = [];
   for (let i = 0; i < state.rows.length; i++) {
-    if (pass(sevOf(state.rows[i].yj))) list.push(i);
+    if (pass(stOf(state.rows[i].yj))) list.push(i);
   }
   list.sort((a, b) => (state.rows[a].hinmei ?? '').localeCompare(state.rows[b].hinmei ?? '', 'ja'));
   state.browse.set(filter, list);
@@ -201,7 +212,7 @@ function renderSearch() {
     // 添字で拾ってから並べ替える（並べ替えに検索キーを使うため）
     hits = [];
     for (let i = 0; i < state.rows.length; i++) {
-      if (matches(state.hays[i], words) && pass(sevOf(state.rows[i].yj))) hits.push(i);
+      if (matches(state.hays[i], words) && pass(stOf(state.rows[i].yj))) hits.push(i);
     }
 
     // 「アムロジピン 5mg」のような数字混じりの語は部分一致で広めに当たる
@@ -310,7 +321,7 @@ function tabs() {
 
 /** しぼり込みの件数を出す。押す前に「何件あるか」が見えるようにするため */
 function renderFilterCounts() {
-  for (const b of $('filters').children) {
+  for (const b of $('filters').querySelectorAll('button[data-filter]')) {
     const n = b.dataset.filter === 'all' ? state.rows.length : browseList(b.dataset.filter).length;
     b.querySelector('.n').textContent = n.toLocaleString();
   }
