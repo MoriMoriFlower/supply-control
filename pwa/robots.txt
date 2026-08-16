@@ -1,0 +1,7 @@
+# 公開に踏み切るまでは検索避けする。
+# ★外すときは3箇所とも外すこと：
+#   1. このファイル
+#   2. pwa/index.html の <meta name="robots">
+#   3. pwa/_headers の X-Robots-Tag
+User-agent: *
+Disallow: /

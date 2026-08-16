@@ -18,26 +18,16 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { resolveSource, download, parseWorkbook, checkKey } from './lib/mhlw.mjs';
 import { buildChanges, tally } from './lib/diff.mjs';
+import { serializeRows, deserializeRows } from './lib/serialize.mjs';
 import { ITEM_KEYS, STATUS_KEYS, KEY } from './lib/schema.mjs';
 
 const DATA = path.resolve('data');
 const CHANGES = path.join(DATA, 'changes');
 
-/** 1行1レコードで書く。gitのdiffが「変わった品目の行だけ」になり、履歴が軽くなる */
-function serializeRows(header, columns, rows) {
-  const head = Object.entries(header).map(([k, v]) => `${JSON.stringify(k)}: ${JSON.stringify(v)}`);
-  const body = rows.map((r) => JSON.stringify(columns.map((c) => r[c]))).join(',\n');
-  return `{\n${head.join(',\n')},\n"columns": ${JSON.stringify(columns)},\n"rows": [\n${body}\n]\n}\n`;
-}
-
 async function readRows(file) {
   if (!existsSync(file)) return null;
   const json = JSON.parse(await readFile(file, 'utf8'));
-  const cols = json.columns;
-  return {
-    meta: json,
-    map: new Map(json.rows.map((r) => [r[cols.indexOf(KEY)], Object.fromEntries(cols.map((c, i) => [c, r[i]]))])),
-  };
+  return { meta: json, map: new Map(deserializeRows(json).map((r) => [r[KEY], r])) };
 }
 
 const log = (...a) => console.log(...a);

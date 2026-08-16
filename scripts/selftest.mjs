@@ -4,10 +4,11 @@
  *
  * 「差分0件」は正常にも故障にも見えるので、必ず“出るはずのものが出る”ことを確認する（共通ノウハウ E-13）。
  */
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { buildChanges } from './lib/diff.mjs';
 import { KEY } from './lib/schema.mjs';
+import { normalize, haystack, terms, matches } from '../pwa/js/normalize.js';
 
 const DATA = path.resolve('data');
 const load = async (f) => {
@@ -116,6 +117,102 @@ const pick = (fn, n = 1) => [...base.values()].filter(fn).slice(0, n);
   const a = JSON.stringify(buildChanges(base, curr).changes);
   const b = JSON.stringify(buildChanges(base, new Map([...curr].reverse())).changes);
   check('入力順が変わっても出力は同一', a === b);
+}
+
+// --- ⑨ ソースに不可視文字が紛れ込んでいない ---
+// 実際に normalize.js へ U+0001 が2つ混入した（2026-08-16）。目視では絶対に分からないので機械で見張る。
+// 不可視文字はエスケープ表記でしか書かない、という掟（共通ノウハウ E-7）の自動化。
+{
+  const dirs = ['scripts', 'pwa'];
+  const bad = [];
+  for (const d of dirs) {
+    let names;
+    try {
+      names = await readdir(path.resolve(d), { recursive: true });
+    } catch {
+      continue; // まだ無いディレクトリは飛ばす
+    }
+    for (const n of names) {
+      if (!/\.(mjs|js|json|html|css|webmanifest)$/.test(n)) continue;
+      const file = path.join(path.resolve(d), n);
+      let text;
+      try {
+        text = await readFile(file, 'utf8');
+      } catch {
+        continue; // ディレクトリ
+      }
+      [...text].forEach((c, i) => {
+        const n2 = c.codePointAt(0);
+        const invisible =
+          (n2 < 0x20 && c !== '\n' && c !== '\r' && c !== '\t') ||
+          n2 === 0x7f ||
+          (n2 >= 0x200b && n2 <= 0x200f) ||
+          n2 === 0x2060 ||
+          n2 === 0xfeff;
+        if (invisible) bad.push(`${d}/${n} の ${i} 文字目に U+${n2.toString(16).toUpperCase().padStart(4, '0')}`);
+      });
+    }
+  }
+  check('ソースに不可視文字が無い', bad.length === 0, bad.slice(0, 5).join(' / '));
+}
+
+// --- ⑩ 検索の正規化。全角の原本と、人が打つ半角・かなを同じ形に潰せているか ---
+{
+  check('全角英数を半角に', normalize('０．３ｇ') === normalize('0.3g'), normalize('０．３ｇ'));
+  // 「ラボナール 0.3g」は語に割れて AND で当たる（間に「注射用」が挟まっていても拾える）
+  check(
+    '全角の原本を半角の入力で拾える',
+    matches(normalize('ラボナール注射用０．３ｇ'), terms('ラボナール 0.3g')),
+    `${normalize('ラボナール注射用０．３ｇ')} ← ${JSON.stringify(terms('ラボナール 0.3g'))}`
+  );
+  check('カタカナとひらがなが同じ', normalize('ロキソニン') === normalize('ろきそにん'));
+  check('半角カナも同じ', normalize('ﾑｺﾀﾞｲﾝ') === normalize('ムコダイン'));
+  check('小書きの揺れを吸収', normalize('シャープ') === normalize('シヤープ'));
+  check('空の入力は空', normalize('') === '' && normalize(undefined) === '');
+  check('検索語に区切り記号は残らない', !terms('ロキソ|ニン').some((t) => t.includes('|')), JSON.stringify(terms('ロキソ|ニン')));
+
+  // 項目をまたいだ誤ヒットが起きないこと（品名の末尾＋成分名の先頭で当たらない）
+  const hay = haystack({ hinmei: 'アイウ', seibun: 'エオカ', maker: '', kikaku: '', yj: '' });
+  check('項目をまたいでは当たらない', !matches(hay, terms('ウエ')), hay);
+  check('項目の中では当たる', matches(hay, terms('イウ')) && matches(hay, terms('エオ')));
+}
+
+// --- ⑪ 実データで引けるか（索引が正しく作られていることの確認も兼ねる） ---
+{
+  const j = JSON.parse(await readFile(path.join(DATA, 'search.json'), 'utf8'));
+  const rows = j.rows.map((r) => Object.fromEntries(j.columns.map((c, i) => [c, r[i]])));
+  const hays = rows.map(haystack);
+  const find = (q) => {
+    const w = terms(q);
+    return rows.filter((_, i) => matches(hays[i], w));
+  };
+
+  check('search.json の件数が items.json と一致', rows.length === base.size, `${rows.length} / ${base.size}`);
+  check('YJ順に並んでいる', rows.every((r, i) => i === 0 || rows[i - 1].yj <= r.yj));
+
+  const sample = [...base.values()][0];
+  check('YJコード完全一致で1件だけ引ける', find(sample.yj).length === 1, sample.yj);
+  check('ひらがなで打っても引ける', find('らぼなーる').some((r) => r.hinmei.includes('ラボナール')));
+  check('成分名でも引ける', find('ロキソプロフェン').length > 1);
+  check('存在しない語では0件', find('ぜったいにないくすりのなまえ').length === 0);
+}
+
+// --- ⑫ status-lite.json のコード表が実データと矛盾しない ---
+{
+  const lite = JSON.parse(await readFile(path.join(DATA, 'status-lite.json'), 'utf8'));
+  const map = new Map(lite.rows.map((r) => [r[0], r]));
+  check('status-lite の件数が一致', map.size === base.size, `${map.size} / ${base.size}`);
+
+  let ok = 0;
+  let ng = [];
+  for (const [yj, r] of base) {
+    const row = map.get(yj);
+    if (!row) { ng.push(`${yj} が無い`); continue; }
+    if (lite.shukkaValues[row[1]] !== r.shukka) ng.push(`${yj} の出荷対応: ${lite.shukkaValues[row[1]]} ≠ ${r.shukka}`);
+    else if (lite.ryoValues[row[2]] !== r.ryo) ng.push(`${yj} の出荷量: ${lite.ryoValues[row[2]]} ≠ ${r.ryo}`);
+    else ok++;
+  }
+  check(`コードを戻すと原本と一致（${ok.toLocaleString()}件）`, ng.length === 0, ng.slice(0, 3).join(' / '));
 }
 
 console.log(`\n${pass} 件成功 / ${fail} 件失敗`);

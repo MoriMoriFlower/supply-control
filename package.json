@@ -6,7 +6,10 @@
   "description": "医薬品の供給不安を通知で受け取るPWA",
   "scripts": {
     "collect": "node scripts/collect.mjs",
-    "selftest": "node scripts/selftest.mjs"
+    "index": "node scripts/build-index.mjs",
+    "selftest": "node scripts/selftest.mjs",
+    "build": "node scripts/build-site.mjs",
+    "dev": "node scripts/build-site.mjs && node scripts/dev.mjs"
   },
   "dependencies": {
     "exceljs": "^4.4.0"

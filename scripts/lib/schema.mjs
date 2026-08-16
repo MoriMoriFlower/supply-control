@@ -57,6 +57,33 @@ export const ITEM_KEYS = COLUMNS.filter((c) => c.group === 'item').map((c) => c.
 export const STATUS_KEYS = [KEY, ...COLUMNS.filter((c) => c.group === 'status').map((c) => c.key)];
 
 /**
+ * ⑫出荷対応 / ⑰出荷量 に入りうる値（原本の表記を逐語で保持）。
+ *
+ * 索引ファイル（search/status-lite）ではこの配列の**添字**で値を持つ。
+ * 16,384行×2列を整数にするだけで生サイズが 400KB ほど縮む。
+ *
+ * ★並び順を変えないこと。添字が変わると、中身が同じでも全行のdiffが出る。
+ * ★ここに無い値が現れても止めない（新しい区分が増えるのは有り得るため）。
+ *   build-index.mjs が末尾に追加し、Actionsのサマリに警告を出す。
+ *   ただし「列」が変われば COLUMNS 側で例外になって止まる（E-13）。
+ */
+export const SHUKKA_VALUES = [
+  '①通常出荷',
+  '②限定出荷（自社の事情）',
+  '③限定出荷（他社品の影響）',
+  '④限定出荷（その他）',
+  '⑤供給停止',
+];
+
+export const RYO_VALUES = [
+  'A．出荷量通常',
+  'Aプラス．出荷量増加',
+  'B．出荷量減少',
+  'C．出荷停止',
+  'D．薬価削除予定',
+];
+
+/**
  * 差分の種別。通知に出すのは 'added' / 'removed' / 'shukka' / 'ryo' まで。
  * 'detail' は理由・見込みの更新で、画面には出すが通知本文には出さない。
  */

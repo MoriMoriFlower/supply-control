@@ -1,0 +1,24 @@
+# Cloudflare Pages のヘッダー設定。ビルド出力の直下に置く必要がある。
+
+/*
+  # 公開に踏み切るまでは検索避け（robots.txt / index.html の meta と合わせて3箇所）
+  X-Robots-Tag: noindex, nofollow, noarchive
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  # 外部への通信を一切させない。気になる薬リストが外へ出る経路を仕組みとして塞ぐ
+  Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+
+# 版が変わると中身も変わるので、必ず問い合わせてから使う
+/data/meta.json
+  Cache-Control: no-cache
+
+/data/changes/latest.json
+  Cache-Control: no-cache
+
+# 中身が変わったかは meta.json のハッシュで判断する。
+# ここは古いものを掴んでも meta 側で気付けるよう、短めに抑える
+/data/search.json
+  Cache-Control: public, max-age=300, must-revalidate
+
+/data/status-lite.json
+  Cache-Control: public, max-age=300, must-revalidate
