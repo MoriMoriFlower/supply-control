@@ -3,6 +3,9 @@
 医薬品の供給不安を「通知」で受け取るPWA。
 上位の `薬剤師/CLAUDE.md` とグローバル `~/.claude/CLAUDE.md` に**追加**で適用する。
 
+- **リポジトリ：** <https://github.com/MoriMoriFlower/supply-control>（**public**・2026-08-16作成）
+- **Cloudflareは未接続**（Step 2 で Git連携型として繋ぐ）
+
 ---
 
 ## 1. 承認済みサイト（再確認不要）
@@ -86,3 +89,5 @@
 - 新システム `iyakuhin-kyokyu.mhlw.go.jp/public/supply-status-list`（令和8年3月31日稼働）にAPI/CSVがあるか。
   SPAのため未取得。**現行xlsxが廃止される可能性があるので、いずれ確認が要る**
 - 元ファイルが実際に更新される時刻（Last-Modifiedの観測を貯めて、cronの時刻を最適化する）
+  - **観測1件目：** 2026-08-14版 = `Fri, 14 Aug 2026 05:18:41 GMT` ＝**JST 14:18**。
+    現状の cron（JST 16:10 / 20:10）はこの後ろなので妥当。数件貯まったら見直す

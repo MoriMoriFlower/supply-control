@@ -26,9 +26,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      # v4系はNode20実行＝2025-09に非推奨化済み。v5以降がNode24。
+      # cache: npm を明示しているので、setup-node v5の「自動キャッシュ」変更の影響は受けない
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm
