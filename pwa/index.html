@@ -32,6 +32,7 @@
 
     <main>
       <section id="tab-watch" class="tab on">
+        <p class="note" id="watch-note"></p>
         <div id="watch-list" class="list"></div>
       </section>
 
@@ -48,6 +49,16 @@
             aria-label="薬を探す"
           />
         </div>
+
+        <!-- 出荷対応でしぼる。語を入れずにここだけ押せば、いま調整中のものを一覧できる。
+             区分の名前と件数は厚労省の原本のまま（こちらで「調整中」を定義し直さない） -->
+        <div class="chips" id="filters" role="group" aria-label="出荷対応でしぼる">
+          <button type="button" data-filter="all" class="on">すべて<span class="n"></span></button>
+          <button type="button" data-filter="adjust">調整中<span class="n"></span></button>
+          <button type="button" data-filter="limited">限定出荷<span class="n"></span></button>
+          <button type="button" data-filter="stop">供給停止<span class="n"></span></button>
+        </div>
+
         <p class="note" id="search-note">品名でも成分名でも引けます。ひらがな・半角でも当たります。</p>
         <div id="search-list" class="list"></div>
       </section>
