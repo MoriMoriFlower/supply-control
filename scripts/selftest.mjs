@@ -149,13 +149,23 @@ const pick = (fn, n = 1) => [...base.values()].filter(fn).slice(0, n);
   check('A⇄Aプラスは通知しない（ノイズ）', changes.every((c) => c.notify === false));
 }
 {
-  // 異常どうしの移動は境界をまたがないので通知しない。
-  // ⚠ B．減少 → D．薬価削除予定 は「いずれ無くなる」情報なので、通知したくなったらここを変える
+  // B/C/D はそれぞれ別物。異常どうしの移動も通知する。
+  // ★B．減少 → C．出荷停止（減っている → 止まった）を黙るのは、827件の沈黙と同じ性質のミス
+  const curr = clone(base);
+  const [a] = pick((r) => r.ryo === 'B．出荷量減少');
+  const [b] = pick((r) => r.ryo === 'D．薬価削除予定');
+  curr.get(a.yj).ryo = 'C．出荷停止';
+  curr.get(b.yj).ryo = 'B．出荷量減少';
+  const { changes, summary } = buildChanges(base, curr);
+  check('★異常どうしの移動(B→C)も通知対象', summary.ryo === 2 && changes.every((c) => c.notify === true),
+    JSON.stringify(changes.map((c) => [c.fields[0]?.from, c.fields[0]?.to, c.notify])));
+}
+{
   const curr = clone(base);
   const [a] = pick((r) => r.ryo === 'B．出荷量減少');
   curr.get(a.yj).ryo = 'D．薬価削除予定';
   const { changes } = buildChanges(base, curr);
-  check('異常どうしの移動(B→D)は通知しない', changes[0]?.notify === false);
+  check('B→D（いずれ無くなる）も通知対象', changes[0]?.notify === true);
 }
 {
   // ⑫と⑰が同時に動いたら、代表は重いほう（⑫）になり、通知対象であることは変わらない
