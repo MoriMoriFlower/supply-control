@@ -101,6 +101,7 @@ scripts/collect.mjs      厚労省xlsx取得 → items.json / status.json / chan
 scripts/build-index.mjs  保存済みJSON → search.json / status-lite.json（外部アクセス不要）
 scripts/build-site.mjs   dist/ を組み立てる（pwa/ ＋ 画面が使う data/ だけ）
 scripts/dev.mjs          手元で見るための静的サーバー（127.0.0.1:8787）
+scripts/make-icons.mjs   SVG→PNGアイコン生成（手動・mutool依存・buildからは呼ばない）
 pwa/                     画面。素のESM・依存ライブラリなし
 ```
 
@@ -108,9 +109,24 @@ pwa/                     画面。素のESM・依存ライブラリなし
 |---|---|
 | `npm run collect` | 厚労省から取得（**唯一の外部アクセス**） |
 | `npm run index` | 索引を作り直す。外部アクセスなし・いつでも実行可 |
-| `npm run selftest` | 差分・検索・索引の自己テスト（外部アクセスなし・35項目） |
+| `npm run selftest` | 差分・検索・索引の自己テスト（外部アクセスなし・45項目） |
+| `npm run icons` | アイコンPNGを作り直す。**絵柄を変えたときだけ**手で回す（下記） |
 | `npm run build` | `dist/` を組み立て |
 | `npm run dev` | build してローカル配信 → <http://localhost:8787> |
+
+### アイコン（2026-08-17 作成）
+
+- **★iOSは manifest の `icons` を見ない。** ホーム画面のアイコンは `index.html` の
+  `<link rel="apple-touch-icon">`（PNG）だけで決まる。無いとページのスクショになる
+- **元は2枚のSVG。** `icon.svg`（角丸あり）と `icon-full.svg`（全面塗り・角丸なし）。
+  **角丸は自分で付けてはいけない用途がある**：apple-touch-icon はiOSが、maskable はAndroidが
+  それぞれ自前のマスクを被せるので、こちらで角丸にすると角に隙間が出る／余白が白く抜ける
+- **maskableの安全域**＝中心から半径 512×0.4＝204.8 の円。現在の絵柄の最遠点は176で収まっている。
+  **絵柄を変えたら再計算すること**（`icon-full.svg` の冒頭コメントに計算を残してある）
+- 生成は **mutool**（MuPDF）。単色の塗りだけなので共通ノウハウ F-3（グラデーションが消える）は該当しない。
+  **日本語パスでも動く**ことを実測で確認済み（LibreOfficeとは違う）
+- `npm run icons` は **buildからもActionsからも呼ばない**。ランナーにmutoolが無いため。
+  PNGはコミット済みなので普段は実行不要
 
 **Cloudflare Pages（Git連携型）の設定：** ビルドコマンド `npm run build` ／ 出力ディレクトリ `dist`
 
