@@ -52,7 +52,7 @@ const ryoIsNormal = (v) => ryoGroup(v) === '普通';
  * @param {object} row    今回の行（removed のときは前回の行）
  * @param {Array}  fields 変化した列の from/to
  */
-function isNotifiable(kind, row, fields = []) {
+export function isNotifiable(kind, row, fields = []) {
   if (kind === 'shukka' || kind === 'removed') return true;
   if (kind === 'added') return !!row && (!shukkaIsNormal(row.shukka) || !ryoIsNormal(row.ryo));
   if (kind === 'ryo') {

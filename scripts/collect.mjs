@@ -20,6 +20,7 @@ import { resolveSource, download, parseWorkbook, checkKey } from './lib/mhlw.mjs
 import { buildChanges, tally } from './lib/diff.mjs';
 import { serializeRows, deserializeRows } from './lib/serialize.mjs';
 import { ITEM_KEYS, STATUS_KEYS, KEY } from './lib/schema.mjs';
+import { runCanary, describe as describeCanary } from './lib/canary.mjs';
 
 const DATA = path.resolve('data');
 const CHANGES = path.join(DATA, 'changes');
@@ -48,7 +49,19 @@ async function main() {
   const prevMeta = existsSync(metaFile) ? JSON.parse(await readFile(metaFile, 'utf8')) : null;
   if (prevMeta?.source?.sha256 === dl.sha256) {
     log(`変化なし（前回と同一ファイル。版 ${prevMeta.source.asOf}）。保存せず終了`);
-    await summary([`### 変化なし`, ``, `前回と同じファイル（版 **${prevMeta.source.asOf}**）でした。`]);
+
+    // ★この道こそカナリアの本番。xlsxが廃止されると、ここを毎回通って
+    //   「変化なし」で静かに成功し続ける。何も壊れていないように見えたまま通知だけが止まる。
+    //   だから保存を伴わないこの経路でも必ず見張りを回す
+    const canary = await announceCanary(prevMeta.source.asOf, prevMeta.counts?.rows ?? 0);
+
+    await summary([
+      `### 変化なし`,
+      ``,
+      `前回と同じファイル（版 **${prevMeta.source.asOf}**）でした。`,
+      ``,
+      ...describeCanary(canary),
+    ]);
     return;
   }
 
@@ -80,6 +93,7 @@ async function main() {
 
   // 5. 書く
   const counts = { rows: rows.length, shukka: tally(rows, 'shukka'), ryo: tally(rows, 'ryo') };
+  const canary = await announceCanary(src.asOf, rows.length);
 
   await writeFile(
     path.join(DATA, 'items.json'),
@@ -121,6 +135,7 @@ async function main() {
         counts,
         key,
         latestChanges: { file: `changes/${path.basename(changeFile)}`, prevAsOf, ...diffSummary },
+        canary,
         license: '出典：厚生労働省「医療用医薬品の供給状況（供給状況一覧表）」を加工して作成',
       },
       null,
@@ -145,9 +160,25 @@ async function main() {
     `- 全 ${rows.length.toLocaleString()} 品目`,
     `- 変化 **${diffSummary.total}** 件（うち通知対象 **${diffSummary.notify}** 件）`,
     `- 内訳: 出荷対応 ${diffSummary.shukka} / 出荷量 ${diffSummary.ryo} / 詳細 ${diffSummary.detail} / 新規 ${diffSummary.added} / 掲載終了 ${diffSummary.removed}`,
+    ...describeCanary(canary),
     ...(top.length ? [``, `| 品名 | 製造販売業者 | 種別 | 変化 |`, `|---|---|---|---|`, ...top] : []),
     ...(first ? [``, `> 初回のため差分は取っていない。次回から比較が始まる。`] : []),
   ]);
+}
+
+/**
+ * カナリアを回して、結果をログとActionsへ知らせる。
+ *
+ * ★異常でもここでは落とさない。落とすとワークフローの後続（コミット）が飛んで、
+ *   せっかく取れたデータが履歴に残らなくなる。
+ *   代わりに出力 canary_alert=1 を立て、**コミットの後ろ**のステップで落とす（collect.yml）。
+ */
+async function announceCanary(asOf, rows) {
+  const c = await runCanary({ asOf, rows });
+  for (const line of describeCanary(c)) log(line.replace(/^- /, '  '));
+  for (const a of c.alerts) console.log(`::error title=カナリア::${a}`);
+  await output('canary_alert', c.alerts.length ? '1' : '0');
+  return c;
 }
 
 /** 同じ版が日中に差し替わったときに、前の差分を潰さないようにする */
@@ -163,6 +194,12 @@ async function uniqueChangeFile(asOf) {
 async function summary(lines) {
   const f = process.env.GITHUB_STEP_SUMMARY;
   if (f) await writeFile(f, lines.join('\n') + '\n', { flag: 'a' });
+}
+
+/** ステップ出力（後続ステップの if: で使う）。手元で動かしたときは何もしない */
+async function output(name, value) {
+  const f = process.env.GITHUB_OUTPUT;
+  if (f) await writeFile(f, `${name}=${value}\n`, { flag: 'a' });
 }
 
 main().catch((err) => {

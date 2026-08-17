@@ -7,6 +7,7 @@
   "scripts": {
     "collect": "node scripts/collect.mjs",
     "index": "node scripts/build-index.mjs",
+    "recompute": "node scripts/recompute.mjs",
     "selftest": "node scripts/selftest.mjs",
     "icons": "node scripts/make-icons.mjs",
     "build": "node scripts/build-site.mjs",

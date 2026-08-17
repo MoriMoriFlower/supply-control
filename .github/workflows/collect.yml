@@ -47,6 +47,7 @@ jobs:
       - run: npm ci
 
       - name: 取得と正規化
+        id: collect
         run: npm run collect
 
       - name: 画面用の索引を作成
@@ -73,3 +74,18 @@ jobs:
           git add data
           git commit -m "データ更新: ${ASOF}版（変化${N}件 / 通知対象${M}件）"
           git push
+
+      # ★必ずコミットの「後ろ」に置くこと。
+      #   ここで落とすのが目的（＝GitHubから失敗メールが飛ぶ）だが、
+      #   コミットより前に置くと、取れたデータが履歴に残らないまま落ちてしまう。
+      #
+      #   鳴る条件は scripts/lib/canary.mjs を参照。
+      #   要するに「新システムのAPIは動いているのに、厚労省xlsxだけ8日以上止まっている」。
+      #   xlsxが廃止されると collect は「変化なし」で静かに成功し続けるので、
+      #   これが無いと“通知だけが永久に来ない”状態に気付けない
+      - name: カナリア（xlsxが静かに止まっていないか）
+        if: steps.collect.outputs.canary_alert == '1'
+        run: |
+          echo "::error::新システムのAPIと食い違っている。厚労省xlsxが更新を止めた可能性がある。"
+          echo "確認先: https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/kenkou_iryou/iryou/kouhatu-iyaku/04_00003.html"
+          exit 1

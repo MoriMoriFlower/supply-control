@@ -6,7 +6,8 @@
  */
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
-import { buildChanges } from './lib/diff.mjs';
+import { buildChanges, isNotifiable } from './lib/diff.mjs';
+import { judge, addDays, COUNT_TOLERANCE } from './lib/canary.mjs';
 import { KEY } from './lib/schema.mjs';
 import { normalize, haystack, terms, matches } from '../pwa/js/normalize.js';
 
@@ -280,6 +281,64 @@ const pick = (fn, n = 1) => [...base.values()].filter(fn).slice(0, n);
     else ok++;
   }
   check(`コードを戻すと原本と一致（${ok.toLocaleString()}件）`, ng.length === 0, ng.slice(0, 3).join(' / '));
+}
+
+// --- ⑬ 保存済みの通知フラグが、いまの判定と一致しているか ---
+//
+// ★これが今回の穴。notify は collect が走った瞬間の判定を焼き付けたもので、
+//   あとから判定を直しても、元ファイルが変わらない日は collect が早期終了するため
+//   保存済みのファイルは古い判定のまま残る。
+//   実際に 2026-08-17 の記録が notify=0 のまま取り残された（ユナスピンが沈黙していた）。
+//   ここが落ちたら `npm run recompute` を実行すること。
+{
+  const dir = path.join(DATA, 'changes');
+  const files = (await readdir(dir)).filter((f) => f.endsWith('.json')).sort();
+  const stale = [];
+  let checked = 0;
+
+  for (const f of files) {
+    const doc = JSON.parse(await readFile(path.join(dir, f), 'utf8'));
+    for (const c of doc.changes ?? []) {
+      checked++;
+      const now = isNotifiable(c.kind, { shukka: c.shukka, ryo: c.ryo }, c.fields ?? []);
+      if (now !== c.notify) stale.push(`${f}: ${c.hinmei}（記録 ${c.notify} / いまの判定 ${now}）`);
+    }
+    const n = (doc.changes ?? []).filter((c) => c.notify).length;
+    if (doc.summary && doc.summary.notify !== n) stale.push(`${f}: summary.notify が ${doc.summary.notify}（実際は ${n}）`);
+  }
+
+  check(
+    `保存済みの通知フラグがいまの判定と一致（${files.length}ファイル / ${checked.toLocaleString()}件）`,
+    stale.length === 0,
+    stale.slice(0, 3).join(' / ') + (stale.length ? ' → npm run recompute で直る' : '')
+  );
+}
+
+// --- ⑭ カナリアの判定（ネットワークを触らない純粋関数だけを試す） ---
+//
+// カナリアは「厚労省xlsxが静かに止まったこと」に気付くための唯一の仕掛けなので、
+// 鳴るべきときに鳴り、鳴るべきでないときに黙ることを機械で確かめておく。
+{
+  check('addDays: 月をまたぐ', addDays('2026-08-31', 1) === '2026-09-01', addDays('2026-08-31', 1));
+  check('addDays: 年をまたぐ', addDays('2026-12-28', 8) === '2027-01-05', addDays('2026-12-28', 8));
+  check('addDays: うるう年の2月', addDays('2028-02-28', 1) === '2028-02-29', addDays('2028-02-28', 1));
+
+  const ok = { asOf: '2026-08-17', rows: 16385, apiTotal: 16385, staleCount: 0, staleFrom: '2026-08-25' };
+  check('正常なら鳴らない', judge(ok).length === 0, JSON.stringify(judge(ok)));
+
+  check('件数の小さな差では鳴らない（両者の更新時刻はずれる）',
+    judge({ ...ok, apiTotal: 16385 + COUNT_TOLERANCE }).length === 0);
+  check('件数が大きく乖離したら鳴る',
+    judge({ ...ok, apiTotal: 16385 + COUNT_TOLERANCE + 1 }).length === 1);
+  check('件数の乖離は減ったときも鳴る（片方だけ肥大するとは限らない）',
+    judge({ ...ok, apiTotal: 16385 - COUNT_TOLERANCE - 1 }).length === 1);
+
+  check('★版が8日以上遅れていたら鳴る（xlsx廃止の検知）',
+    judge({ ...ok, staleCount: 1 }).length === 1, JSON.stringify(judge({ ...ok, staleCount: 1 })));
+  check('鳴るときは何が起きたか本文で分かる',
+    judge({ ...ok, staleCount: 1 })[0].includes('2026-08-17') && judge({ ...ok, staleCount: 1 })[0].includes('2026-08-25'));
+  check('2つ同時に起きたら2件とも出す',
+    judge({ ...ok, apiTotal: 0, staleCount: 5 }).length === 2);
 }
 
 console.log(`\n${pass} 件成功 / ${fail} 件失敗`);

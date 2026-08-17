@@ -5,7 +5,7 @@
  "collectedAt": "2026-08-17T09:02:29.178Z",
  "summary": {
   "total": 9,
-  "notify": 0,
+  "notify": 2,
   "added": 1,
   "removed": 0,
   "shukka": 0,
@@ -42,7 +42,7 @@
      "to": "A．出荷量通常"
     }
    ],
-   "notify": false
+   "notify": true
   },
   {
    "yj": "6132401D2149",
@@ -156,7 +156,7 @@
      "to": "B．出荷量減少"
     }
    ],
-   "notify": false
+   "notify": true
   },
   {
    "yj": "6250029F1032",
