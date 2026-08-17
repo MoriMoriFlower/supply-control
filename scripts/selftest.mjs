@@ -104,13 +104,70 @@ const pick = (fn, n = 1) => [...base.values()].filter(fn).slice(0, n);
 // --- ⑦ 通常出荷での新規掲載は通知しない（ノイズになるため） ---
 {
   const curr = clone(base);
-  const [seed] = pick((r) => r.shukka === '①通常出荷');
+  const [seed] = pick((r) => r.shukka === '①通常出荷' && r.ryo === 'A．出荷量通常');
   curr.set('ZZZZ88888888', { ...seed, yj: 'ZZZZ88888888', hinmei: 'テスト通常新規' });
   const { changes } = buildChanges(base, curr);
   check('通常出荷の新規掲載は通知しない', changes.find((c) => c.kind === 'added')?.notify === false);
 }
+{
+  const curr = clone(base);
+  const [seed] = pick((r) => r.shukka === '①通常出荷' && r.ryo === 'B．出荷量減少');
+  curr.set('ZZZZ77777777', { ...seed, yj: 'ZZZZ77777777', hinmei: 'テスト減少新規' });
+  const { changes } = buildChanges(base, curr);
+  check('①通常出荷でも出荷量減少での新規掲載は通知対象', changes.find((c) => c.kind === 'added')?.notify === true);
+}
 
-// --- ⑧ 並び順が安定している（同じ入力で毎回同じ出力＝無駄なコミットを生まない） ---
+// --- ⑧ ⑰出荷量。★ここが本アプリの肝 ---
+//     ⑫が「①通常出荷」のまま⑰だけBに落ちる品目が実測827件ある。
+//     2026-08-17に実際そうなった（ユナスピン静注用1.5g：⑫①のまま A→B）が、
+//     当時の実装は kind==='ryo' を一律 notify:false にしていたため通知0件だった。
+//     この節が落ちたら、その沈黙が戻ったということ。
+{
+  const curr = clone(base);
+  const [a] = pick((r) => r.shukka === '①通常出荷' && r.ryo === 'A．出荷量通常');
+  curr.get(a.yj).ryo = 'B．出荷量減少';
+  const { changes, summary } = buildChanges(base, curr);
+  check('①通常出荷のまま出荷量A→Bを検出', summary.ryo === 1, JSON.stringify(summary));
+  check('★①通常出荷のまま出荷量A→Bは通知対象', changes[0]?.notify === true);
+  check('⑫は変わっていない（⑰だけの変化）', changes[0]?.fields.every((f) => f.key === 'ryo'));
+}
+{
+  const curr = clone(base);
+  const [a] = pick((r) => r.ryo === 'B．出荷量減少');
+  curr.get(a.yj).ryo = 'A．出荷量通常';
+  const { changes } = buildChanges(base, curr);
+  check('出荷量の回復(B→A)も通知対象', changes[0]?.notify === true);
+}
+{
+  const curr = clone(base);
+  const [a] = pick((r) => r.ryo === 'A．出荷量通常');
+  const [b] = pick((r) => r.ryo === 'Aプラス．出荷量増加');
+  curr.get(a.yj).ryo = 'Aプラス．出荷量増加';
+  curr.get(b.yj).ryo = 'A．出荷量通常';
+  const { changes, summary } = buildChanges(base, curr);
+  check('A⇄Aプラスも変化としては検出する（画面には出す）', summary.ryo === 2, JSON.stringify(summary));
+  check('A⇄Aプラスは通知しない（ノイズ）', changes.every((c) => c.notify === false));
+}
+{
+  // 異常どうしの移動は境界をまたがないので通知しない。
+  // ⚠ B．減少 → D．薬価削除予定 は「いずれ無くなる」情報なので、通知したくなったらここを変える
+  const curr = clone(base);
+  const [a] = pick((r) => r.ryo === 'B．出荷量減少');
+  curr.get(a.yj).ryo = 'D．薬価削除予定';
+  const { changes } = buildChanges(base, curr);
+  check('異常どうしの移動(B→D)は通知しない', changes[0]?.notify === false);
+}
+{
+  // ⑫と⑰が同時に動いたら、代表は重いほう（⑫）になり、通知対象であることは変わらない
+  const curr = clone(base);
+  const [a] = pick((r) => r.shukka === '①通常出荷' && r.ryo === 'A．出荷量通常');
+  curr.get(a.yj).shukka = '⑤供給停止';
+  curr.get(a.yj).ryo = 'C．出荷停止';
+  const { changes } = buildChanges(base, curr);
+  check('⑫と⑰が同時に動いても通知対象', changes[0]?.kind === 'shukka' && changes[0]?.notify === true);
+}
+
+// --- ⑨ 並び順が安定している（同じ入力で毎回同じ出力＝無駄なコミットを生まない） ---
 {
   const curr = clone(base);
   for (const r of pick((r) => r.shukka === '①通常出荷', 5)) curr.get(r.yj).shukka = '⑤供給停止';

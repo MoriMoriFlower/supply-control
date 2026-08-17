@@ -7,18 +7,43 @@
  *  - 初回（前回データが無い）は「全件が新規」ではなく「差分なし」として扱う。
  *    16,384件の追加通知を出しても意味がないため。
  */
-import { COLUMNS, WATCHED } from './schema.mjs';
+import { COLUMNS, WATCHED, RYO_NORMAL } from './schema.mjs';
 
 const LABEL = Object.fromEntries(COLUMNS.map((c) => [c.key, c.label]));
 
 /** 種別の重み。1品目で複数変わったときは重いほうを代表にする */
 const RANK = { removed: 4, added: 3, shukka: 2, ryo: 1, detail: 0 };
 
-/** 通知に出してよい変化か。理由・見込みだけの更新は通知しない（頻度が高くノイズになる） */
-function isNotifiable(kind, row) {
+/** ⑫が「①通常出荷」か。空欄は未報告なので通常扱い（＝それだけでは通知しない） */
+const shukkaIsNormal = (v) => (v ?? '') === '' || v.startsWith('①');
+
+/** ⑰が「普通に入ってくる」側か。空欄は未報告なので通常扱い、知らない値は異常側へ倒す */
+const ryoIsNormal = (v) => (v ?? '') === '' || RYO_NORMAL.has(v);
+
+/**
+ * 通知に出してよい変化か。
+ *
+ *  - ⑫出荷対応の変化・掲載終了 …… 必ず通知
+ *  - ⑰出荷量の変化 …… 「普通に入ってくる(A/Aプラス)」と「そうでない(B/C/D)」の
+ *    境界をまたいだときだけ通知する。悪化も回復も同じ扱いで出す（事実だけを伝える方針）。
+ *    A⇄Aプラスの行き来は通知しない。
+ *    ★★これが無いと現場で一番効く層が丸ごと沈黙する。
+ *      ⑫が「①通常出荷」のまま⑰だけBに落ちている品目が実測827件あり（CLAUDE.md §3のクロス集計）、
+ *      2026-08-17に実際そうなった（ユナスピン静注用1.5g：⑫①のまま A→B。旧実装では通知0件）。
+ *  - 新規掲載 …… 最初から⑫が通常でない、または⑰が普通でないときだけ通知
+ *  - ⑭理由・⑮⑯見込みだけの更新 …… 通知しない（頻度が高くノイズになる）
+ *
+ * @param {string} kind   変化の種別
+ * @param {object} row    今回の行（removed のときは前回の行）
+ * @param {Array}  fields 変化した列の from/to
+ */
+function isNotifiable(kind, row, fields = []) {
   if (kind === 'shukka' || kind === 'removed') return true;
-  // 新規掲載は「最初から通常出荷でない」ときだけ通知する
-  if (kind === 'added') return !!row && row.shukka !== '' && !row.shukka.startsWith('①');
+  if (kind === 'added') return !!row && (!shukkaIsNormal(row.shukka) || !ryoIsNormal(row.ryo));
+  if (kind === 'ryo') {
+    const f = fields.find((x) => x.key === 'ryo');
+    return !!f && ryoIsNormal(f.from) !== ryoIsNormal(f.to);
+  }
   return false;
 }
 
@@ -70,7 +95,7 @@ export function buildChanges(prev, curr) {
       shukka: now.shukka,
       ryo: now.ryo,
       fields,
-      notify: isNotifiable(kind, now),
+      notify: isNotifiable(kind, now, fields),
     });
   }
 
