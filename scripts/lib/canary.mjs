@@ -35,6 +35,18 @@ export const STALE_DAYS = 8;
  * 両者の更新時刻はずれるので、1日ぶんの増減（実測で1日あたり中央値12件）は乖離ではない。
  * 桁が変わるような食い違いだけを拾う。
  */
+/**
+ * ★こちらが持っている版（asOf）が何日止まったら異常とみなすか。
+ *
+ * ここが**本命の見張り**。外部APIを一切使わないので、どこで動かしても必ず効く。
+ * 上の STALE_DAYS（APIとの突合）は 2026-08-21 に GitHub Actions から 403 で
+ * 叩けないことが判明したため、実質「手元で回したときのおまけ」になった。
+ *
+ * 年末年始は 12/28 → 1/5 で 8日空きうるので、そこで鳴らないよう 10日で切る。
+ * 恒久的に止まったなら 10日待っても止まったままなので、見逃しにはならない。
+ */
+export const SOURCE_STALE_DAYS = 10;
+
 export const COUNT_TOLERANCE = 100;
 
 export const TIMEOUT_MS = 15000;
@@ -48,6 +60,41 @@ export function addDays(isoDate, n) {
   const t = new Date(Date.UTC(y, m - 1, d) + n * 86400000);
   const p = (v) => String(v).padStart(2, '0');
   return `${t.getUTCFullYear()}-${p(t.getUTCMonth() + 1)}-${p(t.getUTCDate())}`;
+}
+
+/** 'YYYY-MM-DD' 同士の日数差（to - from） */
+export function daysBetween(from, to) {
+  const at = (d) => {
+    const [y, m, dd] = d.split('-').map(Number);
+    return Date.UTC(y, m - 1, dd);
+  };
+  return Math.round((at(to) - at(from)) / 86400000);
+}
+
+/** いまの日本時間の日付。Actions は UTC で動くので必ずこれを通す */
+export function todayJst(now = new Date()) {
+  const t = new Date(now.getTime() + 9 * 3600000);
+  const p = (v) => String(v).padStart(2, '0');
+  return `${t.getUTCFullYear()}-${p(t.getUTCMonth() + 1)}-${p(t.getUTCDate())}`;
+}
+
+/**
+ * ★外部APIを使わない見張り：厚労省xlsxの版が止まっていないか。
+ *
+ * xlsxが「消える」なら resolveSource() が例外で落ちるので気付ける。
+ * 気付けないのは「置いてあるが更新されなくなった」場合で、collect は
+ * 毎回「変化なし」で静かに成功し続ける。それをここで拾う。
+ *
+ * ★ネットワークを触らない純粋関数。自己テストが直接叩けるようにするため。
+ * @returns {string[]} 異常の説明。空配列なら正常
+ */
+export function judgeSource({ asOf, today }) {
+  const age = daysBetween(asOf, today);
+  if (age < SOURCE_STALE_DAYS) return [];
+  return [
+    `厚労省xlsxが ${age}日間 更新されていない（最新の版は ${asOf}・許容 ${SOURCE_STALE_DAYS}日）。` +
+      `ページの掲載場所が変わっていないか、新システムへ移行していないか確認すること`,
+  ];
 }
 
 /**
@@ -99,10 +146,18 @@ async function ask(params = {}) {
  * 見張りを1回実行する。
  * ★成功しても失敗しても例外を投げない。呼び出し側の処理を絶対に巻き込まない。
  *
- * @param {{asOf: string, rows: number}} state いまこちらが持っている版と件数
+ * 見張りは2段構え：
+ *  1. judgeSource() …… 外部を使わない。**必ず効く**（APIが死んでいても走る）
+ *  2. judge()       …… APIとの突合。取れたときだけ足す
+ *
+ * @param {{asOf: string, rows: number, today?: string, prevCanary?: object}} state
  */
-export async function runCanary({ asOf, rows }) {
+export async function runCanary({ asOf, rows, today = todayJst(), prevCanary = null }) {
   const checkedAt = new Date().toISOString();
+
+  // ★APIの成否と無関係に、まずこちらだけで判定する
+  const sourceAlerts = judgeSource({ asOf, today });
+
   try {
     const apiTotal = await ask();
 
@@ -119,23 +174,50 @@ export async function runCanary({ asOf, rows }) {
       checkedAt,
       asOf,
       rows,
+      today,
       apiTotal,
       newerFrom,
       newerThanAsOf,
       staleFrom,
       staleCount,
-      alerts: judge({ asOf, rows, apiTotal, staleCount, staleFrom }),
+      failStreak: 0,
+      alerts: [...sourceAlerts, ...judge({ asOf, rows, apiTotal, staleCount, staleFrom })],
     };
   } catch (err) {
-    // 非公表APIなので落ちること自体は異常ではない。記録だけ残して素通りする。
-    // ★ここを alerts に入れない。APIの不調で毎日鳴ると、本当の異常が埋もれる
-    return { ok: false, checkedAt, asOf, rows, error: String(err?.message ?? err), alerts: [] };
+    // 非公表APIなので落ちること自体は異常ではない。
+    // ★API不調そのものは alerts に入れない（毎日鳴ると本当の異常が埋もれる）。
+    //   代わりに「何回連続で見えていないか」を残し、describe() で必ず申告する。
+    //   2026-08-21 判明：GitHub Actions からは HTTP 403（IPで弾かれる）。
+    //   手元のPCからは同じヘッダーで 200 が返るので、これは相手側のアクセス制限。
+    //   ★回避しようとしないこと。403は「機械で来るな」という意思表示なので、
+    //     見張りの本体は judgeSource()（公表xlsxだけで完結する側）に移してある。
+    return {
+      ok: false,
+      checkedAt,
+      asOf,
+      rows,
+      today,
+      error: String(err?.message ?? err),
+      failStreak: (prevCanary?.failStreak ?? 0) + 1,
+      alerts: sourceAlerts,
+    };
   }
 }
 
 /** Actions のログ・サマリに出す文面（人が読む用） */
 export function describe(c) {
-  if (!c.ok) return [`- カナリア: 照合できず（${c.error}）。xlsx側の取得には影響しない`];
-  const head = `- カナリア: API ${c.apiTotal.toLocaleString()}件 / xlsx ${c.rows.toLocaleString()}件（差 ${Math.abs(c.apiTotal - c.rows)}）・版より新しい掲載 ${c.newerThanAsOf}件`;
-  return c.alerts.length ? [head, ...c.alerts.map((a) => `- **★${a}**`)] : [head];
+  const age = c.today ? daysBetween(c.asOf, c.today) : null;
+  const lines = [];
+
+  lines.push(
+    c.ok
+      ? `- カナリア: API ${c.apiTotal.toLocaleString()}件 / xlsx ${c.rows.toLocaleString()}件（差 ${Math.abs(c.apiTotal - c.rows)}）・版より新しい掲載 ${c.newerThanAsOf}件`
+      : `- カナリア: APIとは照合できず（${c.error}・${c.failStreak ?? 1}回連続）。GitHub Actions からは403で叩けない。xlsx側の取得には影響しない`
+  );
+
+  if (age !== null) {
+    lines.push(`- 版の鮮度: ${c.asOf}（${age === 0 ? '本日' : `${age}日前`}・${SOURCE_STALE_DAYS}日で異常とみなす）`);
+  }
+
+  return [...lines, ...c.alerts.map((a) => `- **★${a}**`)];
 }

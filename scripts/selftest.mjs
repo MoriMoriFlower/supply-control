@@ -7,7 +7,7 @@
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { buildChanges, isNotifiable } from './lib/diff.mjs';
-import { judge, addDays, COUNT_TOLERANCE } from './lib/canary.mjs';
+import { judge, judgeSource, addDays, daysBetween, todayJst, COUNT_TOLERANCE, SOURCE_STALE_DAYS } from './lib/canary.mjs';
 import { KEY } from './lib/schema.mjs';
 import { normalize, haystack, terms, matches } from '../pwa/js/normalize.js';
 
@@ -341,5 +341,34 @@ const pick = (fn, n = 1) => [...base.values()].filter(fn).slice(0, n);
     judge({ ...ok, apiTotal: 0, staleCount: 5 }).length === 2);
 }
 
+// --- ⑮ ★外部APIを使わない見張り（xlsxの版が止まっていないか） ---
+//
+// 2026-08-21に判明：APIとの突合は GitHub Actions からは403で叩けない（IPで弾かれる）。
+// 本番で唯一必ず動く見張りがここなので、境界を機械で押さえておく。
+{
+  check('daysBetween: 素直な差', daysBetween('2026-08-11', '2026-08-21') === 10, String(daysBetween('2026-08-11', '2026-08-21')));
+  check('daysBetween: 月をまたぐ', daysBetween('2026-08-28', '2026-09-02') === 5, String(daysBetween('2026-08-28', '2026-09-02')));
+
+  // ★UTCで動くActionsでも日本時間の日付になること（JST 00:30 は UTC 前日 15:30）
+  check('todayJst: UTCの前日夕方でも日本の今日になる',
+    todayJst(new Date('2026-08-20T15:30:00Z')) === '2026-08-21', todayJst(new Date('2026-08-20T15:30:00Z')));
+  check('todayJst: 日をまたぐ直前', todayJst(new Date('2026-08-20T14:59:00Z')) === '2026-08-20');
+
+  check('当日の版なら鳴らない', judgeSource({ asOf: '2026-08-21', today: '2026-08-21' }).length === 0);
+  check('お盆の3日空きでは鳴らない', judgeSource({ asOf: '2026-08-10', today: '2026-08-13' }).length === 0);
+
+  // 年末年始は 12/28 → 1/5 で8日空きうる。ここで鳴ってはいけない
+  check('★年末年始の8日空きでは鳴らない', judgeSource({ asOf: '2026-12-28', today: '2027-01-05' }).length === 0,
+    JSON.stringify(judgeSource({ asOf: '2026-12-28', today: '2027-01-05' })));
+
+  check(`境界: ${SOURCE_STALE_DAYS - 1}日はまだ鳴らない`,
+    judgeSource({ asOf: '2026-08-01', today: addDays('2026-08-01', SOURCE_STALE_DAYS - 1) }).length === 0);
+  check(`★境界: ${SOURCE_STALE_DAYS}日で鳴る（xlsxが静かに止まった検知）`,
+    judgeSource({ asOf: '2026-08-01', today: addDays('2026-08-01', SOURCE_STALE_DAYS) }).length === 1);
+  check('鳴るときは版の日付と経過日数が本文に出る', (() => {
+    const a = judgeSource({ asOf: '2026-08-01', today: '2026-08-21' })[0];
+    return a.includes('2026-08-01') && a.includes('20日');
+  })());
+}
 console.log(`\n${pass} 件成功 / ${fail} 件失敗`);
 process.exit(fail ? 1 : 0);

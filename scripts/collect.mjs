@@ -53,7 +53,7 @@ async function main() {
     // ★この道こそカナリアの本番。xlsxが廃止されると、ここを毎回通って
     //   「変化なし」で静かに成功し続ける。何も壊れていないように見えたまま通知だけが止まる。
     //   だから保存を伴わないこの経路でも必ず見張りを回す
-    const canary = await announceCanary(prevMeta.source.asOf, prevMeta.counts?.rows ?? 0);
+    const canary = await announceCanary(prevMeta.source.asOf, prevMeta.counts?.rows ?? 0, prevMeta.canary);
 
     await summary([
       `### 変化なし`,
@@ -93,7 +93,7 @@ async function main() {
 
   // 5. 書く
   const counts = { rows: rows.length, shukka: tally(rows, 'shukka'), ryo: tally(rows, 'ryo') };
-  const canary = await announceCanary(src.asOf, rows.length);
+  const canary = await announceCanary(src.asOf, rows.length, prevMeta?.canary);
 
   await writeFile(
     path.join(DATA, 'items.json'),
@@ -173,8 +173,8 @@ async function main() {
  *   せっかく取れたデータが履歴に残らなくなる。
  *   代わりに出力 canary_alert=1 を立て、**コミットの後ろ**のステップで落とす（collect.yml）。
  */
-async function announceCanary(asOf, rows) {
-  const c = await runCanary({ asOf, rows });
+async function announceCanary(asOf, rows, prevCanary = null) {
+  const c = await runCanary({ asOf, rows, prevCanary });
   for (const line of describeCanary(c)) log(line.replace(/^- /, '  '));
   for (const a of c.alerts) console.log(`::error title=カナリア::${a}`);
   await output('canary_alert', c.alerts.length ? '1' : '0');
