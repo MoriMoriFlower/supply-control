@@ -26,7 +26,7 @@ on:
     - cron: '20 10 * * *'
     - cron: '20 12 * * *'
     - cron: '20 14 * * *'
-    - cron: '23 23 * * *'
+    - cron: '20 23 * * *'
   workflow_dispatch: # 手動実行用
 
 permissions:
