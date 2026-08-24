@@ -1,67 +1,67 @@
 {
   "source": {
     "page": "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/kenkou_iryou/iryou/kouhatu-iyaku/04_00003.html",
-    "file": "https://www.mhlw.go.jp/content/10800000/260821iyakuhinkyoukyu.xlsx",
-    "linkText": "医療用医薬品供給状況（令和８年８月21日現在）",
-    "asOf": "2026-08-21",
-    "sha256": "fa3ca8a0798c3402017ef2612cf5279302f2103fa02b98b01d8b1e03d2707f42",
-    "bytes": 1556329,
-    "lastModified": "Mon, 24 Aug 2026 00:31:54 GMT"
+    "file": "https://www.mhlw.go.jp/content/10800000/260824iyakuhinkyoukyu.xlsx",
+    "linkText": "医療用医薬品供給状況（令和８年８月24日現在）",
+    "asOf": "2026-08-24",
+    "sha256": "ac45e089ab1d98dc240206de2cb11dbdeb208b63762c09d136a5e9929ec6ef9e",
+    "bytes": 1554832,
+    "lastModified": "Mon, 24 Aug 2026 09:05:30 GMT"
   },
-  "collectedAt": "2026-08-24T07:29:24.651Z",
+  "collectedAt": "2026-08-24T09:06:24.623Z",
   "counts": {
-    "rows": 16388,
+    "rows": 16390,
     "shukka": {
       "①通常出荷": 14537,
-      "⑤供給停止": 881,
-      "②限定出荷（自社の事情）": 477,
+      "⑤供給停止": 882,
+      "②限定出荷（自社の事情）": 478,
       "③限定出荷（他社品の影響）": 420,
       "④限定出荷（その他）": 73
     },
     "ryo": {
-      "A．出荷量通常": 10688,
-      "Aプラス．出荷量増加": 3480,
-      "B．出荷量減少": 1040,
-      "D．薬価削除予定": 710,
-      "C．出荷停止": 470
+      "A．出荷量通常": 10680,
+      "Aプラス．出荷量増加": 3484,
+      "B．出荷量減少": 1039,
+      "D．薬価削除予定": 721,
+      "C．出荷停止": 466
     }
   },
   "key": {
-    "unique": 16388,
+    "unique": 16390,
     "nonStandard": 404
   },
   "latestChanges": {
-    "file": "changes/2026-08-21.json",
-    "prevAsOf": "2026-08-20",
-    "total": 109,
-    "notify": 89,
-    "added": 1,
+    "file": "changes/2026-08-24.json",
+    "prevAsOf": "2026-08-21",
+    "total": 22,
+    "notify": 14,
+    "added": 2,
     "removed": 0,
-    "shukka": 5,
-    "ryo": 101,
-    "detail": 2
+    "shukka": 3,
+    "ryo": 17,
+    "detail": 0
   },
   "canary": {
     "ok": false,
-    "checkedAt": "2026-08-24T07:29:24.062Z",
-    "asOf": "2026-08-21",
-    "rows": 16388,
+    "checkedAt": "2026-08-24T09:06:23.996Z",
+    "asOf": "2026-08-24",
+    "rows": 16390,
     "today": "2026-08-24",
     "error": "HTTP 403 Forbidden",
-    "failStreak": 1,
+    "failStreak": 2,
     "alerts": []
   },
   "license": "出典：厚生労働省「医療用医薬品の供給状況（供給状況一覧表）」を加工して作成",
   "index": {
-    "asOf": "2026-08-21",
-    "rows": 16388,
+    "asOf": "2026-08-24",
+    "rows": 16390,
     "search.json": {
-      "bytes": 2296549,
-      "sha256": "fef0abcefec4a7e4"
+      "bytes": 2296795,
+      "sha256": "cd61cf0b2a7f8178"
     },
     "status-lite.json": {
-      "bytes": 358465,
-      "sha256": "2f565c3ea140335c"
+      "bytes": 358509,
+      "sha256": "b603150d4e8955e7"
     }
   }
 }
