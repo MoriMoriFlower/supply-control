@@ -370,5 +370,31 @@ const pick = (fn, n = 1) => [...base.values()].filter(fn).slice(0, n);
     return a.includes('2026-08-01') && a.includes('20日');
   })());
 }
+// --- 16 画面側の「更新が止まっている」表示 ------------------------------
+// 2026-09-13 追加。カナリアは collect が動いてはじめて回るので、
+// ★collect 自体が止まったら鳴らない（GitHubは60日無活動でスケジュールを自動停止する）。
+// そこを埋めるのが pwa/js/app.js の renderStale。閾値を canary.mjs と別々に持っているので、
+// 食い違うと「Actionsは鳴っているのに画面は平気な顔をする」。機械で縛っておく。
+{
+  console.log('\n[16] 画面側の停滞表示');
+  const src = await readFile(path.resolve('pwa/js/app.js'), 'utf8');
+
+  const m = src.match(/^const STALE_DAYS = (\d+);$/m);
+  check('app.js に STALE_DAYS がある', !!m);
+  check('★app.js の STALE_DAYS が canary.mjs と同じ（' + SOURCE_STALE_DAYS + '日）',
+    !!m && Number(m[1]) === SOURCE_STALE_DAYS, m ? m[1] : '(見つからない)');
+
+  // 定数だけ合っていて呼び忘れる、が一番ありがちな壊れ方
+  check('renderStale が定義されている', /function renderStale\(/.test(src));
+  check('★renderStale が main から呼ばれている', /\n\s*renderStale\(meta\);/.test(src));
+
+  // 出す先が無ければ、何も起きないまま静かに正常終了してしまう
+  const html = await readFile(path.resolve('pwa/index.html'), 'utf8');
+  check('index.html に掲示先(#stale)がある', html.includes('id="stale"'));
+  check('ふだんは隠れている（hidden 付き）', /<p class="stale" id="stale" hidden>/.test(html));
+  const css = await readFile(path.resolve('pwa/css/style.css'), 'utf8');
+  check('style.css に .stale の見た目がある', css.includes('.stale {'));
+}
+
 console.log(`\n${pass} 件成功 / ${fail} 件失敗`);
 process.exit(fail ? 1 : 0);

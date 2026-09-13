@@ -12,6 +12,61 @@ import { normalize, haystack, terms, matches } from './normalize.js';
 
 const $ = (id) => document.getElementById(id);
 
+/**
+ * ★厚労省の版が何日止まったら「止まっている」と画面に出すか。
+ *
+ * scripts/lib/canary.mjs の SOURCE_STALE_DAYS と**同じ値でなければならない**。
+ * 食い違うと、Actions側は鳴っているのに画面は平気な顔をする（またはその逆）。
+ * ずれたら npm run selftest が落ちる。
+ */
+const STALE_DAYS = 10;
+
+/** いまの日本時間の日付。端末が海外時間でもここを通せばずれない（canary.mjs の todayJst と同じ） */
+function todayJst(now = new Date()) {
+  const t = new Date(now.getTime() + 9 * 3600000);
+  const p = (v) => String(v).padStart(2, '0');
+  return `${t.getUTCFullYear()}-${p(t.getUTCMonth() + 1)}-${p(t.getUTCDate())}`;
+}
+
+/** 'YYYY-MM-DD' 同士の日数差（to - from） */
+function daysBetween(from, to) {
+  const at = (d) => {
+    const [y, m, dd] = d.split('-').map(Number);
+    return Date.UTC(y, m - 1, dd);
+  };
+  return Math.round((at(to) - at(from)) / 86400000);
+}
+
+/**
+ * ★「更新が止まっていること」を画面に出す。
+ *
+ * このアプリの約束は「変化があったら知らせる」なので、
+ * **何も来ない＝変化がない**と読まれてしまう。だから止まったときは、止まったと言わないといけない。
+ *
+ * ★カナリア（scripts/lib/canary.mjs）ではここを塞げない。
+ *   カナリアは collect が動いてはじめて回るので、**collect 自体が止まったら鳴らない**
+ *   （GitHubは「60日間リポジトリに活動が無い」とスケジュール実行を自動停止する）。
+ *   ここは端末側で日付を見るだけなので、向こうが全部死んでいても効く。
+ *
+ * ★厚労省が止まったのか、こちらが止まったのかは端末からは区別できない。
+ *   区別できないことを断ったうえで、確認は一次情報へ飛ばす（通知の方針と同じ）。
+ */
+function renderStale(meta) {
+  const el = $('stale');
+  if (!el) return;
+  const asOf = meta?.source?.asOf;
+  if (!asOf) return;
+  const age = daysBetween(asOf, todayJst());
+  if (age < STALE_DAYS) {
+    el.hidden = true;
+    return;
+  }
+  el.textContent =
+    `⚠ 厚生労働省の版が ${age}日間 更新されていません（最新の版は ${asOf}）。` +
+    `変化が無いのではなく、更新の仕組みが止まっている可能性があります。下の出典リンクから直接ご確認ください。`;
+  el.hidden = false;
+}
+
 const state = {
   meta: null,
   rows: [],      // search.json の全品目
@@ -345,6 +400,7 @@ async function main() {
   }
   state.meta = meta;
   $('asof').textContent = `厚生労働省 ${meta.source.asOf} 版／全 ${meta.counts.rows.toLocaleString()} 品目`;
+  renderStale(meta); // ★止まっていたら黙らない
   $('src-link').href = meta.source.page;
 
   try {

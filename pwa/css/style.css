@@ -55,6 +55,19 @@ body {
 .asof { margin: 2px 0 0; font-size: 12px; color: var(--dim); }
 .asof.err { color: var(--stop-fg); }
 
+/* ★「更新が止まっている」の掲示。
+   ふだんは hidden で、10日以上動かなかったときだけ出る。
+   見逃されると意味がないので、赤系（--stop-*）で本文と同じ字の大きさにしてある。 */
+.stale {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--stop-bg);
+  color: var(--stop-fg);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 /* タブ。position: sticky で上に貼り付ける */
 .tabs {
   position: sticky;
