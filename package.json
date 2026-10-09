@@ -9,6 +9,7 @@
     "index": "node scripts/build-index.mjs",
     "recompute": "node scripts/recompute.mjs",
     "selftest": "node scripts/selftest.mjs",
+    "stats": "node scripts/stats.mjs",
     "icons": "node scripts/make-icons.mjs",
     "build": "node scripts/build-site.mjs",
     "dev": "node scripts/build-site.mjs && node scripts/dev.mjs"
