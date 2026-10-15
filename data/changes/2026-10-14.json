@@ -1,0 +1,368 @@
+{
+ "asOf": "2026-10-14",
+ "prevAsOf": "2026-10-13",
+ "first": false,
+ "collectedAt": "2026-10-15T01:33:55.393Z",
+ "summary": {
+  "total": 11,
+  "notify": 9,
+  "added": 2,
+  "removed": 0,
+  "shukka": 9,
+  "ryo": 0,
+  "detail": 0
+ },
+ "changes": [
+  {
+   "yj": "4291101M1021",
+   "hinmei": "イソトレックスカプセル８ｍｇ",
+   "maker": "サンファーマ",
+   "kikaku": "８ｍｇ１カプセル",
+   "seibun": "イソトレチノイン",
+   "kind": "added",
+   "shukka": "①通常出荷",
+   "ryo": "A．出荷量通常",
+   "fields": [],
+   "notify": false
+  },
+  {
+   "yj": "4291101M2028",
+   "hinmei": "イソトレックスカプセル１６ｍｇ",
+   "maker": "サンファーマ",
+   "kikaku": "１６ｍｇ１カプセル",
+   "seibun": "イソトレチノイン",
+   "kind": "added",
+   "shukka": "①通常出荷",
+   "ryo": "A．出荷量通常",
+   "fields": [],
+   "notify": false
+  },
+  {
+   "yj": "1179046F1044",
+   "hinmei": "セルトラリン錠２５ｍｇ「ＪＧ」",
+   "maker": "日本ジェネリック",
+   "kikaku": "２５ｍｇ１錠",
+   "seibun": "セルトラリン塩酸塩",
+   "kind": "shukka",
+   "shukka": "②限定出荷（自社の事情）",
+   "ryo": "B．出荷量減少",
+   "fields": [
+    {
+     "key": "shukka",
+     "label": "出荷対応の状況",
+     "from": "①通常出荷",
+     "to": "②限定出荷（自社の事情）"
+    },
+    {
+     "key": "ryo",
+     "label": "出荷量の状況",
+     "from": "A．出荷量通常",
+     "to": "B．出荷量減少"
+    },
+    {
+     "key": "riyu",
+     "label": "理由",
+     "from": "７．－",
+     "to": "８．その他の理由"
+    },
+    {
+     "key": "kaijo",
+     "label": "解除・解消見込み",
+     "from": "エ. －",
+     "to": "イ. なし"
+    }
+   ],
+   "notify": true
+  },
+  {
+   "yj": "1179046F2040",
+   "hinmei": "セルトラリン錠５０ｍｇ「ＪＧ」",
+   "maker": "日本ジェネリック",
+   "kikaku": "５０ｍｇ１錠",
+   "seibun": "セルトラリン塩酸塩",
+   "kind": "shukka",
+   "shukka": "②限定出荷（自社の事情）",
+   "ryo": "B．出荷量減少",
+   "fields": [
+    {
+     "key": "shukka",
+     "label": "出荷対応の状況",
+     "from": "①通常出荷",
+     "to": "②限定出荷（自社の事情）"
+    },
+    {
+     "key": "ryo",
+     "label": "出荷量の状況",
+     "from": "A．出荷量通常",
+     "to": "B．出荷量減少"
+    },
+    {
+     "key": "riyu",
+     "label": "理由",
+     "from": "７．－",
+     "to": "８．その他の理由"
+    },
+    {
+     "key": "kaijo",
+     "label": "解除・解消見込み",
+     "from": "エ. －",
+     "to": "イ. なし"
+    }
+   ],
+   "notify": true
+  },
+  {
+   "yj": "1179046F3098",
+   "hinmei": "セルトラリン錠１００ｍｇ「ＪＧ」",
+   "maker": "日本ジェネリック",
+   "kikaku": "１００ｍｇ１錠",
+   "seibun": "セルトラリン塩酸塩",
+   "kind": "shukka",
+   "shukka": "②限定出荷（自社の事情）",
+   "ryo": "B．出荷量減少",
+   "fields": [
+    {
+     "key": "shukka",
+     "label": "出荷対応の状況",
+     "from": "①通常出荷",
+     "to": "②限定出荷（自社の事情）"
+    },
+    {
+     "key": "ryo",
+     "label": "出荷量の状況",
+     "from": "A．出荷量通常",
+     "to": "B．出荷量減少"
+    },
+    {
+     "key": "riyu",
+     "label": "理由",
+     "from": "７．－",
+     "to": "８．その他の理由"
+    },
+    {
+     "key": "kaijo",
+     "label": "解除・解消見込み",
+     "from": "エ. －",
+     "to": "イ. なし"
+    }
+   ],
+   "notify": true
+  },
+  {
+   "yj": "2615703X1507",
+   "hinmei": "サラヤ消毒用エタノール",
+   "maker": "サラヤ",
+   "kikaku": "１０ｍＬ",
+   "seibun": "消毒用エタノール",
+   "kind": "shukka",
+   "shukka": "①通常出荷",
+   "ryo": "A．出荷量通常",
+   "fields": [
+    {
+     "key": "shukka",
+     "label": "出荷対応の状況",
+     "from": "④限定出荷（その他）",
+     "to": "①通常出荷"
+    },
+    {
+     "key": "riyu",
+     "label": "理由",
+     "from": "１．需要増",
+     "to": "７．－"
+    },
+    {
+     "key": "kaijo",
+     "label": "解除・解消見込み",
+     "from": "ウ. 未定",
+     "to": "エ. －"
+    }
+   ],
+   "notify": true
+  },
+  {
+   "yj": "2615705Q1145",
+   "hinmei": "消エタサラコール",
+   "maker": "サラヤ",
+   "kikaku": "１０ｍＬ",
+   "seibun": "エタノール",
+   "kind": "shukka",
+   "shukka": "①通常出荷",
+   "ryo": "A．出荷量通常",
+   "fields": [
+    {
+     "key": "shukka",
+     "label": "出荷対応の状況",
+     "from": "④限定出荷（その他）",
+     "to": "①通常出荷"
+    },
+    {
+     "key": "riyu",
+     "label": "理由",
+     "from": "１．需要増",
+     "to": "７．－"
+    },
+    {
+     "key": "kaijo",
+     "label": "解除・解消見込み",
+     "from": "ウ. 未定",
+     "to": "エ. －"
+    }
+   ],
+   "notify": true
+  },
+  {
+   "yj": "6141001R1120",
+   "hinmei": "エリスロシンドライシロップ１０％",
+   "maker": "ヴィアトリス・ヘルスケア",
+   "kikaku": "１００ｍｇ１ｇ",
+   "seibun": "エリスロマイシンエチルコハク酸エステル",
+   "kind": "shukka",
+   "shukka": "②限定出荷（自社の事情）",
+   "ryo": "B．出荷量減少",
+   "fields": [
+    {
+     "key": "shukka",
+     "label": "出荷対応の状況",
+     "from": "①通常出荷",
+     "to": "②限定出荷（自社の事情）"
+    },
+    {
+     "key": "ryo",
+     "label": "出荷量の状況",
+     "from": "A．出荷量通常",
+     "to": "B．出荷量減少"
+    },
+    {
+     "key": "riyu",
+     "label": "理由",
+     "from": "７．－",
+     "to": "３．製造トラブル（製造委託を含む）"
+    },
+    {
+     "key": "kaijo",
+     "label": "解除・解消見込み",
+     "from": "エ. －",
+     "to": "ウ. 未定"
+    }
+   ],
+   "notify": true
+  },
+  {
+   "yj": "6250019F1098",
+   "hinmei": "バラシクロビル錠５００ｍｇ「ＪＧ」",
+   "maker": "日本ジェネリック",
+   "kikaku": "５００ｍｇ１錠",
+   "seibun": "バラシクロビル塩酸塩",
+   "kind": "shukka",
+   "shukka": "⑤供給停止",
+   "ryo": "C．出荷停止",
+   "fields": [
+    {
+     "key": "shukka",
+     "label": "出荷対応の状況",
+     "from": "①通常出荷",
+     "to": "⑤供給停止"
+    },
+    {
+     "key": "ryo",
+     "label": "出荷量の状況",
+     "from": "A．出荷量通常",
+     "to": "C．出荷停止"
+    },
+    {
+     "key": "riyu",
+     "label": "理由",
+     "from": "７．－",
+     "to": "８．その他の理由"
+    },
+    {
+     "key": "kaijo",
+     "label": "解除・解消見込み",
+     "from": "エ. －",
+     "to": "イ. なし"
+    }
+   ],
+   "notify": true
+  },
+  {
+   "yj": "7122704X1293",
+   "hinmei": "親水クリーム「ヨシダ」",
+   "maker": "吉田製薬",
+   "kikaku": "１０ｇ",
+   "seibun": "親水クリーム",
+   "kind": "shukka",
+   "shukka": "①通常出荷",
+   "ryo": "A．出荷量通常",
+   "fields": [
+    {
+     "key": "shukka",
+     "label": "出荷対応の状況",
+     "from": "③限定出荷（他社品の影響）",
+     "to": "①通常出荷"
+    },
+    {
+     "key": "riyu",
+     "label": "理由",
+     "from": "１．需要増",
+     "to": "７．－"
+    },
+    {
+     "key": "kaijo",
+     "label": "解除・解消見込み",
+     "from": "ウ. 未定",
+     "to": "エ. －"
+    }
+   ],
+   "notify": true
+  },
+  {
+   "yj": "7319002X1039",
+   "hinmei": "安息香酸ナトリウム",
+   "maker": "小堺製薬",
+   "kikaku": "１０ｇ",
+   "seibun": "安息香酸ナトリウム",
+   "kind": "shukka",
+   "shukka": "⑤供給停止",
+   "ryo": "C．出荷停止",
+   "fields": [
+    {
+     "key": "shukka",
+     "label": "出荷対応の状況",
+     "from": "①通常出荷",
+     "to": "⑤供給停止"
+    },
+    {
+     "key": "ryo",
+     "label": "出荷量の状況",
+     "from": "A．出荷量通常",
+     "to": "C．出荷停止"
+    },
+    {
+     "key": "riyu",
+     "label": "理由",
+     "from": "７．－",
+     "to": "４．品質トラブル（製造委託を含む）"
+    },
+    {
+     "key": "kaijo",
+     "label": "解除・解消見込み",
+     "from": "エ. －",
+     "to": "ウ. 未定"
+    },
+    {
+     "key": "kaizenJiki",
+     "label": "出荷量の改善見込み時期",
+     "from": "",
+     "to": "e．３か月超"
+    },
+    {
+     "key": "kaizenRyo",
+     "label": "出荷量の改善見込み量",
+     "from": "",
+     "to": "110"
+    }
+   ],
+   "notify": true
+  }
+ ]
+}
